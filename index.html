@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SkyScholars - Interactive Aerodynamics Learning Hub</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
+    <style>
+        :root {
+            --primary: #0066ff;
+            --secondary: #00c2ff;
+            --accent: #7b61ff;
+            --dark: #0a0e19;
+            --light: #f0f6ff;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--dark);
+            color: #d9d9d9;
+            overflow-x: hidden;
+            margin: 0;
+        }
+        
+        .gradient-text {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .bg-grid {
+            background-image: 
+                linear-gradient(rgba(15, 25, 45, 0.7) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(15, 25, 45, 0.7) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+        
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-15px); }
+            100% { transform: translateY(0px); }
+        }
+        
+        .floating {
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        .card {
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(15, 25, 45, 0.3);
+            backdrop-filter: blur(10px);
+        }
+        
+        .card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 30px rgba(0, 100, 255, 0.2);
+            border-color: rgba(0, 120, 255, 0.4);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            border: none;
+            border-radius: 50px;
+            padding: 16px 40px;
+            font-weight: 600;
+            color: white;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-primary:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: 0.5s;
+        }
+        
+        .btn-primary:hover:before {
+            left: 100%;
+        }
+        
+        .btn-primary:hover {
+            box-shadow: 0 10px 25px rgba(0, 100, 255, 0.3);
+            transform: translateY(-3px);
+        }
+        
+        .section-title {
+            position: relative;
+            display: inline-block;
+            margin-bottom: 60px;
+        }
+        
+        .section-title:after {
+            content: '';
+            position: absolute;
+            width: 60%;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary), transparent);
+            bottom: -15px;
+            left: 0;
+            border-radius: 2px;
+        }
+        
+        .nav-link {
+            position: relative;
+            padding: 8px 0;
+        }
+        
+        .nav-link:after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: 0;
+            left: 0;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            transition: width 0.3s ease;
+        }
+        
+        .nav-link:hover:after {
+            width: 100%;
+        }
+        
+        .feature-icon {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 120, 255, 0.1);
+            margin-bottom: 20px;
+        }
+        
+        .force-button {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 12px 20px;
+            color: white;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .force-button:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-3px);
+        }
+        
+        .force-button.active {
+            background: rgba(0, 120, 255, 0.2);
+            border-color: var(--primary);
+        }
+        
+        .slider-container {
+            margin: 20px 0;
+        }
+        
+        .slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            outline: none;
+        }
+        
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+        }
+        
+        .simulation-container {
+            position: relative;
+            width: 100%;
+            height: 500px;
+            border-radius: 15px;
+            overflow: hidden;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .force-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .force-bar {
+            height: 8px;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            flex-grow: 1;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .force-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        
+        .balance-indicator {
+            padding: 15px;
+            border-radius: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            text-align: center;
+            margin-top: 20px;
+            transition: all 0.5s ease;
+        }
+        
+        .balance-indicator.balanced {
+            background: rgba(0, 255, 0, 0.1);
+            border: 1px solid rgba(0, 255, 0, 0.3);
+        }
+        
+        .quiz-container {
+            background: rgba(15, 25, 45, 0.5);
+            border-radius: 15px;
+            padding: 30px;
+            margin-top: 30px;
+        }
+        
+        .quiz-option {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .quiz-option:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .quiz-option.correct {
+            background: rgba(0, 255, 0, 0.1);
+            border-color: rgba(0, 255, 0, 0.3);
+        }
+        
+        .quiz-option.incorrect {
+            background: rgba(255, 0, 0, 0.1);
+            border-color: rgba(255, 0, 0, 0.3);
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 20px;
+            background: var(--primary);
+            color: white;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body class="bg-grid">
+    <!-- Animated background elements -->
+    <div class="fixed inset-0 -z-10 overflow-hidden">
+        <div class="absolute top-0 left-0 w-1/3 h-1/3 rounded-full bg-blue-500/5 blur-3xl floating" style="animation-delay: 0s;"></div>
+        <div class="absolute bottom-0 right-0 w-1/4 h-1/4 rounded-full bg-purple-500/5 blur-3xl floating" style="animation-delay: 2s;"></div>
+    </div>
+
+    <!-- Navbar -->
+    <header class="fixed top-0 w-full z-50 p-6 transition-all duration-300">
+        <div class="max-w-7xl mx-auto flex justify-between items-center text-white">
+            <div class="flex items-center gap-4">
+                <img src="skyscholarscrop.jpg" alt="SkyScholars Logo" class="h-12 w-12 object-contain rounded-xl">
+                <h1 class="text-2xl font-bold gradient-text">SkyScholars</h1>
+            </div>
+            <nav class="hidden md:block">
+                <ul class="flex gap-8">
+                    <li><a href="#home" class="nav-link text-white">Home</a></li>
+                    <li><a href="#simulation" class="nav-link text-white">Flight Simulation</a></li>
+                    <li><a href="#learning" class="nav-link text-white">Learning Mode</a></li>
+                    <li><a href="#videos" class="nav-link text-white">Videos</a></li>
+                </ul>
+            </nav>
+            <div class="md:hidden text-white">
+                <i class="fas fa-bars text-xl"></i>
+            </div>
+        </div>
+    </header>
+
+    <!-- Home Section -->
+    <section id="home" class="min-h-screen flex items-center justify-center relative pt-20 pb-32 px-6">
+        <div class="max-w-5xl mx-auto text-center">
+            <h2 class="text-5xl md:text-7xl font-bold text-white mb-6 leading-tight">
+                Interactive <span class="gradient-text">Aerodynamics</span> Learning Hub
+            </h2>
+            <p class="text-xl md:text-2xl text-blue-100 mb-10 max-w-3xl mx-auto">
+                Welcome to SkyScholars — learn how airplanes conquer the skies through interactive science.
+            </p>
+            <a href="#simulation" class="btn-primary">Begin Flight Simulation</a>
+            
+            <!-- Animated airplane -->
+            <div class="mt-16 relative h-40">
+                <div class="absolute left-0 top-1/2 transform -translate-y-1/2 floating" style="animation-duration: 8s;">
+                    <i class="fas fa-plane text-5xl text-blue-400"></i>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Scroll indicator -->
+        <div class="absolute bottom-10 left-1/2 transform -translate-x-1/2">
+            <div class="w-6 h-10 border-2 border-blue-400 rounded-full flex justify-center">
+                <div class="w-1 h-3 bg-blue-400 rounded-full mt-2 animate-bounce"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Flight Simulation Section -->
+    <section id="simulation" class="py-20 px-6">
+        <div class="max-w-7xl mx-auto">
+            <h3 class="text-3xl md:text-4xl font-bold text-white text-center section-title">Interactive Forces of Flight</h3>
+            
+            <div class="grid md:grid-cols-3 gap-8">
+                <!-- Controls Panel -->
+                <div class="card p-6 rounded-2xl">
+                    <h4 class="text-xl font-bold text-white mb-6">Flight Controls</h4>
+                    
+                    <div class="mb-8">
+                        <h5 class="text-lg font-semibold text-blue-300 mb-4">Force Controls</h5>
+                        <div class="grid grid-cols-2 gap-4">
+                            <button id="lift-btn" class="force-button">
+                                <i class="fas fa-arrow-up text-green-400"></i>
+                                <span>Lift</span>
+                            </button>
+                            <button id="thrust-btn" class="force-button">
+                                <i class="fas fa-arrow-right text-blue-400"></i>
+                                <span>Thrust</span>
+                            </button>
+                            <button id="gravity-btn" class="force-button">
+                                <i class="fas fa-arrow-down text-red-400"></i>
+                                <span>Gravity</span>
+                            </button>
+                            <button id="drag-btn" class="force-button">
+                                <i class="fas fa-arrow-left text-yellow-400"></i>
+                                <span>Drag</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-8">
+                        <h5 class="text-lg font-semibold text-blue-300 mb-4">Force Adjustments</h5>
+                        
+                        <div class="slider-container">
+                            <label class="text-blue-200 mb-2 block">Angle of Attack</label>
+                            <input type="range" min="0" max="100" value="50" class="slider" id="angle-slider">
+                        </div>
+                        
+                        <div class="slider-container">
+                            <label class="text-blue-200 mb-2 block">Engine Power</label>
+                            <input type="range" min="0" max="100" value="50" class="slider" id="thrust-slider">
+                        </div>
+                        
+                        <div class="slider-container">
+                            <label class="text-blue-200 mb-2 block">Weight Distribution</label>
+                            <input type="range" min="0" max="100" value="50" class="slider" id="weight-slider">
+                        </div>
+                    </div>
+                    
+                    <div class="force-indicators">
+                        <h5 class="text-lg font-semibold text-blue-300 mb-4">Force Balance</h5>
+                        
+                        <div class="force-indicator">
+                            <span class="text-blue-200 w-20">Lift</span>
+                            <div class="force-bar">
+                                <div id="lift-bar" class="force-fill bg-green-500" style="width: 50%"></div>
+                            </div>
+                            <span id="lift-value" class="text-blue-200 w-10 text-right">50%</span>
+                        </div>
+                        
+                        <div class="force-indicator">
+                            <span class="text-blue-200 w-20">Weight</span>
+                            <div class="force-bar">
+                                <div id="weight-bar" class="force-fill bg-red-500" style="width: 50%"></div>
+                            </div>
+                            <span id="weight-value" class="text-blue-200 w-10 text-right">50%</span>
+                        </div>
+                        
+                        <div class="force-indicator">
+                            <span class="text-blue-200 w-20">Thrust</span>
+                            <div class="force-bar">
+                                <div id="thrust-bar" class="force-fill bg-blue-500" style="width: 50%"></div>
+                            </div>
+                            <span id="thrust-value" class="text-blue-200 w-10 text-right">50%</span>
+                        </div>
+                        
+                        <div class="force-indicator">
+                            <span class="text-blue-200 w-20">Drag</span>
+                            <div class="force-bar">
+                                <div id="drag-bar" class="force-fill bg-yellow-500" style="width: 50%"></div>
+                            </div>
+                            <span id="drag-value" class="text-blue-200 w-10 text-right">50%</span>
+                        </div>
+                        
+                        <div id="balance-indicator" class="balance-indicator">
+                            <i class="fas fa-exclamation-triangle text-yellow-400"></i>
+                            <span class="ml-2">Forces Unbalanced</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Simulation Area -->
+                <div class="md:col-span-2">
+                    <div class="simulation-container" id="simulation-canvas">
+                        <!-- p5.js simulation will be rendered here -->
+                    </div>
+                    
+                    <!-- Force Information -->
+                    <div class="mt-6">
+                        <div id="force-info" class="card p-6 rounded-2xl">
+                            <h4 class="text-xl font-bold text-white mb-4">How Flight Works</h4>
+                            <p class="text-blue-200">
+                                Select a force to learn more about how it affects flight. Balanced flight occurs when lift equals weight and thrust equals drag.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Learning Mode Section -->
+    <section id="learning" class="py-20 bg-blue-900/10 px-6">
+        <div class="max-w-4xl mx-auto">
+            <h3 class="text-3xl md:text-4xl font-bold text-white text-center section-title">Learning Mode</h3>
+            
+            <div class="quiz-container">
+                <h4 class="text-2xl font-bold text-white mb-6">Quiz the Skies!</h4>
+                
+                <div id="quiz-question" class="text-xl text-blue-200 mb-8">
+                    What force is generated by the wings and counteracts gravity to keep the airplane in the air?
+                </div>
+                
+                <div id="quiz-options">
+                    <div class="quiz-option" data-correct="false">
+                        <span>Thrust</span>
+                    </div>
+                    <div class="quiz-option" data-correct="true">
+                        <span>Lift</span>
+                    </div>
+                    <div class="quiz-option" data-correct="false">
+                        <span>Drag</span>
+                    </div>
+                    <div class="quiz-option" data-correct="false">
+                        <span>Gravity</span>
+                    </div>
+                </div>
+                
+                <div class="mt-8 flex justify-between items-center">
+                    <div>
+                        <span class="text-blue-200">Score: </span>
+                        <span id="quiz-score" class="text-white font-bold">0</span>
+                        <span id="quiz-badge" class="badge hidden">Aerodynamics Expert!</span>
+                    </div>
+                    <button id="next-question" class="btn-primary">Next Question</button>
+                </div>
+            </div>
+            
+            <div class="grid md:grid-cols-2 gap-8 mt-16">
+                <div class="card p-6 rounded-2xl">
+                    <h4 class="text-xl font-bold text-white mb-4">Lift Explained</h4>
+                    <p class="text-blue-200 mb-4">
+                        Lift is the upward force that counteracts gravity and keeps the airplane in the air. The wings create pressure differences as air flows over and under them.
+                    </p>
+                    <p class="text-blue-200">
+                        The curved top of the wing means air has to travel faster over the top surface, creating lower pressure according to Bernoulli's principle, which results in upward lift.
+                    </p>
+                </div>
+                
+                <div class="card p-6 rounded-2xl">
+                    <h4 class="text-xl font-bold text-white mb-4">Balanced Flight</h4>
+                    <p class="text-blue-200 mb-4">
+                        Balanced flight occurs when lift equals weight and thrust equals drag. When these forces are balanced, the airplane flies at a constant altitude and speed.
+                    </p>
+                    <p class="text-blue-200">
+                        If there's more thrust than drag, the airplane speeds up. If there's more lift than weight, the airplane will climb.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Videos Section -->
+    <section id="videos" class="py-20 px-6">
+        <div class="max-w-7xl mx-auto">
+            <h3 class="text-3xl md:text-4xl font-bold text-white text-center section-title">SkyScholars YouTube Integration</h3>
+            <p class="text-xl text-blue-200 text-center max-w-3xl mx-auto mb-16">
+                Watch, then Try - Learn from our videos then test your knowledge in the simulator
+            </p>
+            
+            <div class="grid md:grid-cols-2 gap-12">
+                <div>
+                    <div class="relative rounded-2xl overflow-hidden shadow-2xl">
+                        <!-- YouTube video embed would go here -->
+                        <div class="w-full h-80 bg-blue-900/30 flex items-center justify-center">
+                            <div class="text-center">
+                                <i class="fas fa-play-circle text-6xl text-blue-400 mb-4"></i>
+                                <p class="text-blue-200">Principles of Lift Video</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-6">
+                        <h4 class="text-2xl font-bold text-white mb-4">Principles of Lift</h4>
+                        <p class="text-blue-200 mb-6">
+                            In this video, we explore how wings generate lift through air pressure differences and Bernoulli's principle.
+                        </p>
+                        <a href="#simulation" class="inline-flex items-center text-blue-400 hover:text-blue-300">
+                            <span>Try Lift Simulation</span>
+                            <i class="fas fa-arrow-right ml-2"></i>
+                        </a>
+                    </div>
+                </div>
+                
+                <div>
+                    <div class="relative rounded-2xl overflow-hidden shadow-2xl">
+                        <!-- YouTube video embed would go here -->
+                        <div class="w-full h-80 bg-purple-900/30 flex items-center justify-center">
+                            <div class="text-center">
+                                <i class="fas fa-play-circle text-6xl text-purple-400 mb-4"></i>
+                                <p class="text-blue-200">Four Forces of Flight</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-6">
+                        <h4 class="text-2xl font-bold text-white mb-4">Four Forces of Flight</h4>
+                        <p class="text-blue-200 mb-6">
+                            Learn about the four fundamental forces that act on an airplane in flight: lift, weight, thrust, and drag.
+                        </p>
+                        <a href="#simulation" class="inline-flex items-center text-blue-400 hover:text-blue-300">
+                            <span>Try Full Simulation</span>
+                            <i class="fas fa-arrow-right ml-2"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="py-12 bg-black/40 px-6">
+        <div class="max-w-7xl mx-auto">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="flex items-center gap-4 mb-6 md:mb-0">
+                    <img src="skyscholarscrop.jpg" alt="SkyScholars Logo" class="h-12 w-12 object-contain rounded-xl">
+                    <h2 class="text-xl font-bold gradient-text">SkyScholars</h2>
+                </div>
+                
+                <div class="flex gap-6 mb-6 md:mb-0">
+                    <a href="#" class="text-blue-300 hover:text-white"><i class="fab fa-youtube text-xl"></i></a>
+                    <a href="#" class="text-blue-300 hover:text-white"><i class="fab fa-twitter text-xl"></i></a>
+                    <a href="#" class="text-blue-300 hover:text-white"><i class="fab fa-instagram text-xl"></i></a>
+                </div>
+                
+                <p class="text-blue-300 text-sm">&copy; 2025 SkyScholars. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Flight simulation variables
+        let lift = 50;
+        let weight = 50;
+        let thrust = 50;
+        let drag = 50;
+        let angleOfAttack = 50;
+        let weightDistribution = 50;
+        let activeForce = null;
+        
+        // Quiz variables
+        let quizScore = 0;
+        let currentQuestion = 0;
+        
+        // Quiz questions
+        const quizQuestions = [
+            {
+                question: "What force is generated by the wings and counteracts gravity to keep the airplane in the air?",
+                options: ["Thrust", "Lift", "Drag", "Gravity"],
+                correct: 1
+            },
+            {
+                question: "Which force opposes the airplane's motion through the air?",
+                options: ["Lift", "Thrust", "Drag", "Gravity"],
+                correct: 2
+            },
+            {
+                question: "What happens when thrust is greater than drag?",
+                options: ["The airplane slows down", "The airplane speeds up", "The airplane climbs", "The airplane descends"],
+                correct: 1
+            },
+            {
+                question: "According to Bernoulli's principle, what happens to air pressure when air moves faster?",
+                options: ["Pressure increases", "Pressure decreases", "Pressure stays the same", "Pressure becomes zero"],
+                correct: 1
+            },
+            {
+                question: "What is the balance point where an airplane's weight is evenly distributed?",
+                options: ["Center of thrust", "Center of lift", "Center of gravity", "Center of drag"],
+                correct: 2
+            }
+        ];
+        
+        // Initialize the simulation
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set up force buttons
+            document.getElementById('lift-btn').addEventListener('click', function() {
+                setActiveForce('lift');
+            });
+            
+            document.getElementById('thrust-btn').addEventListener('click', function() {
+                setActiveForce('thrust');
+            });
+            
+            document.getElementById('gravity-btn').addEventListener('click', function() {
+                setActiveForce('gravity');
+            });
+            
+            document.getElementById('drag-btn').addEventListener('click', function() {
+                setActiveForce('drag');
+            });
+            
+            // Set up sliders
+            document.getElementById('angle-slider').addEventListener('input', function() {
+                angleOfAttack = this.value;
+                updateLift();
+                updateSimulation();
+            });
+            
+            document.getElementById('thrust-slider').addEventListener('input', function() {
+                thrust = this.value;
+                updateDrag();
+                updateSimulation();
+            });
+            
+            document.getElementById('weight-slider').addEventListener('input', function() {
+                weightDistribution = this.value;
+                updateSimulation();
+            });
+            
+            // Set up quiz
+            setupQuiz();
+            
+            // Initialize p5.js simulation
+            initSimulation();
+        });
+        
+        function setActiveForce(force) {
+            // Remove active class from all buttons
+            document.querySelectorAll('.force-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Add active class to clicked button
+            document.getElementById(`${force}-btn`).classList.add('active');
+            
+            activeForce = force;
+            updateForceInfo();
+        }
+        
+        function updateForceInfo() {
+            const infoDiv = document.getElementById('force-info');
+            
+            switch(activeForce) {
+                case 'lift':
+                    infoDiv.innerHTML = `
+                        <h4 class="text-xl font-bold text-white mb-4">Lift</h4>
+                        <p class="text-blue-200 mb-4">
+                            Lift is the upward force that counteracts gravity and keeps the airplane in the air. The wings create pressure differences as air flows over and under them.
+                        </p>
+                        <p class="text-blue-200">
+                            The airplane's wings are shaped (airfoil design) to make air move faster over the top surface than the bottom. Bernoulli's principle states that faster air results in lower pressure on the top - ultimately creating upward lift.
+                        </p>
+                    `;
+                    break;
+                case 'thrust':
+                    infoDiv.innerHTML = `
+                        <h4 class="text-xl font-bold text-white mb-4">Thrust</h4>
+                        <p class="text-blue-200 mb-4">
+                            Thrust is the force produced by the airplane's engines (propellers or jet engines). Thrust pushes the airplane forward and acts against drag.
+                        </p>
+                        <p class="text-blue-200">
+                            Thrust's direction is forward, acting in the direction of flight. When thrust is greater than drag, the airplane accelerates.
+                        </p>
+                    `;
+                    break;
+                case 'gravity':
+                    infoDiv.innerHTML = `
+                        <h4 class="text-xl font-bold text-white mb-4">Gravity</h4>
+                        <p class="text-blue-200 mb-4">
+                            Gravity is the downward force that pulls the airplane towards the ground. Gravity is equal to the weight of the airplane.
+                        </p>
+                        <p class="text-blue-200">
+                            Gravity pulls down on the airplane through its center of gravity. The center of gravity is a point within an object where its weight is balanced in all directions.
+                        </p>
+                    `;
+                    break;
+                case 'drag':
+                    infoDiv.innerHTML = `
+                        <h4 class="text-xl font-bold text-white mb-4">Drag</h4>
+                        <p class="text-blue-200 mb-4">
+                            Drag is the resistance force that opposes an airplane's motion in the air. There are two types of drag:
+                        </p>
+                        <ul class="text-blue-200 list-disc pl-5">
+                            <li>Parasite drag comes from the shape of the airplane</li>
+                            <li>Induced drag comes from generating lift</li>
+                        </ul>
+                        <p class="text-blue-200 mt-4">
+                            Drag acts rearward, opposite to the direction of thrust.
+                        </p>
+                    `;
+                    break;
+                default:
+                    infoDiv.innerHTML = `
+                        <h4 class="text-xl font-bold text-white mb-4">How Flight Works</h4>
+                        <p class="text-blue-200">
+                            Select a force to learn more about how it affects flight. Balanced flight occurs when lift equals weight and thrust equals drag.
+                        </p>
+                    `;
+            }
+        }
+        
+        function updateLift() {
+            // Lift increases with angle of attack up to a point
+            lift = Math.min(100, 30 + (angleOfAttack * 0.7));
+            updateForceBars();
+        }
+        
+        function updateDrag() {
+            // Drag increases with thrust and angle of attack
+            drag = Math.min(100, 20 + (thrust * 0.5) + (angleOfAttack * 0.3));
+            updateForceBars();
+        }
+        
+        function updateForceBars() {
+            document.getElementById('lift-bar').style.width = `${lift}%`;
+            document.getElementById('weight-bar').style.width = `${weight}%`;
+            document.getElementById('thrust-bar').style.width = `${thrust}%`;
+            document.getElementById('drag-bar').style.width = `${drag}%`;
+            
+            document.getElementById('lift-value').textContent = `${Math.round(lift)}%`;
+            document.getElementById('weight-value').textContent = `${Math.round(weight)}%`;
+            document.getElementById('thrust-value').textContent = `${Math.round(thrust)}%`;
+            document.getElementById('drag-value').textContent = `${Math.round(drag)}%`;
+            
+            // Check balance
+            const balanceIndicator = document.getElementById('balance-indicator');
+            const liftWeightBalanced = Math.abs(lift - weight) < 10;
+            const thrustDragBalanced = Math.abs(thrust - drag) < 10;
+            
+            if (liftWeightBalanced && thrustDragBalanced) {
+                balanceIndicator.innerHTML = '<i class="fas fa-check-circle text-green-400"></i><span class="ml-2">Forces Balanced - Cruising!</span>';
+                balanceIndicator.classList.add('balanced');
+            } else {
+                balanceIndicator.innerHTML = '<i class="fas fa-exclamation-triangle text-yellow-400"></i><span class="ml-2">Forces Unbalanced</span>';
+                balanceIndicator.classList.remove('balanced');
+            }
+        }
+        
+        function setupQuiz() {
+            displayQuestion();
+            
+            // Set up option click events
+            document.querySelectorAll('.quiz-option').forEach(option => {
+                option.addEventListener('click', function() {
+                    if (this.classList.contains('correct') || this.classList.contains('incorrect')) {
+                        return; // Already answered
+                    }
+                    
+                    const isCorrect = this.getAttribute('data-correct') === 'true';
+                    
+                    if (isCorrect) {
+                        this.classList.add('correct');
+                        quizScore++;
+                        document.getElementById('quiz-score').textContent = quizScore;
+                        
+                        // Show badge if score is high
+                        if (quizScore >= 4) {
+                            document.getElementById('quiz-badge').classList.remove('hidden');
+                        }
+                    } else {
+                        this.classList.add('incorrect');
+                        
+                        // Highlight correct answer
+                        document.querySelectorAll('.quiz-option').forEach(opt => {
+                            if (opt.getAttribute('data-correct') === 'true') {
+                                opt.classList.add('correct');
+                            }
+                        });
+                    }
+                });
+            });
+            
+            // Set up next question button
+            document.getElementById('next-question').addEventListener('click', function() {
+                currentQuestion = (currentQuestion + 1) % quizQuestions.length;
+                displayQuestion();
+            });
+        }
+        
+        function displayQuestion() {
+            const question = quizQuestions[currentQuestion];
+            
+            document.getElementById('quiz-question').textContent = question.question;
+            
+            const optionsContainer = document.getElementById('quiz-options');
+            optionsContainer.innerHTML = '';
+            
+            question.options.forEach((option, index) => {
+                const isCorrect = index === question.correct;
+                const optionElement = document.createElement('div');
+                optionElement.className = 'quiz-option';
+                optionElement.setAttribute('data-correct', isCorrect);
+                optionElement.innerHTML = `<span>${option}</span>`;
+                optionsContainer.appendChild(optionElement);
+            });
+            
+            // Reattach event listeners
+            document.querySelectorAll('.quiz-option').forEach(option => {
+                option.addEventListener('click', function() {
+                    if (this.classList.contains('correct') || this.classList.contains('incorrect')) {
+                        return;
+                    }
+                    
+                    const isCorrect = this.getAttribute('data-correct') === 'true';
+                    
+                    if (isCorrect) {
+                        this.classList.add('correct');
+                        quizScore++;
+                        document.getElementById('quiz-score').textContent = quizScore;
+                        
+                        if (quizScore >= 4) {
+                            document.getElementById('quiz-badge').classList.remove('hidden');
+                        }
+                    } else {
+                        this.classList.add('incorrect');
+                        
+                        document.querySelectorAll('.quiz-option').forEach(opt => {
+                            if (opt.getAttribute('data-correct') === 'true') {
+                                opt.classList.add('correct');
+                            }
+                        });
+                    }
+                });
+            });
+        }
+        
+        // p5.js Simulation
+        function initSimulation() {
+            new p5(function(p) {
+                let planeX, planeY;
+                let airParticles = [];
+                let wingAngle = 0;
+                
+                p.setup = function() {
+                    const canvas = p.createCanvas(800, 500);
+                    canvas.parent('simulation-canvas');
+                    
+                    planeX = p.width / 4;
+                    planeY = p.height / 2;
+                    
+                    // Create air particles
+                    for (let i = 0; i < 50; i++) {
+                        airParticles.push({
+                            x: p.random(p.width),
+                            y: p.random(p.height),
+                            size: p.random(2, 5),
+                            speed: p.random(1, 3)
+                        });
+                    }
+                };
+                
+                p.draw = function() {
+                    p.background(10, 15, 25, 200);
+                    
+                    // Update plane position based on forces
+                    const netVerticalForce = lift - weight;
+                    const netHorizontalForce = thrust - drag;
+                    
+                    // Adjust plane position based on forces
+                    planeY += p.map(netVerticalForce, -100, 100, 3, -3);
+                    planeX += p.map(netHorizontalForce, -100, 100, -1, 5);
+                    
+                    // Keep plane in bounds
+                    planeY = p.constrain(planeY, 50, p.height - 50);
+                    if (planeX > p.width + 100) planeX = -100;
+                    if (planeX < -100) planeX = p.width + 100;
+                    
+                    // Draw air particles
+                    drawAirflow();
+                    
+                    // Draw plane
+                    drawPlane();
+                    
+                    // Draw force vectors if active
+                    if (activeForce) {
+                        drawForceVectors();
+                    }
+                };
+                
+                function drawAirflow() {
+                    p.push();
+                    
+                    // Air particles moving based on thrust
+                    const airSpeed = p.map(thrust, 0, 100, 0.5, 3);
+                    
+                    for (let particle of airParticles) {
+                        // Move particles
+                        particle.x -= airSpeed;
+                        
+                        // Reset particles that go off screen
+                        if (particle.x < 0) {
+                            particle.x = p.width;
+                            particle.y = p.random(p.height);
+                        }
+                        
+                        // Color particles based on speed (Bernoulli's principle)
+                        let particleColor;
+                        if (particle.y < planeY - 30) {
+                            // Above wing - faster air (lower pressure)
+                            particleColor = p.color(100, 200, 255, 150);
+                            particle.speed = p.map(thrust, 0, 100, 1.5, 4);
+                        } else if (particle.y > planeY + 30) {
+                            // Below wing - slower air (higher pressure)
+                            particleColor = p.color(255, 200, 100, 150);
+                            particle.speed = p.map(thrust, 0, 100, 0.5, 2);
+                        } else {
+                            // Near wing
+                            particleColor = p.color(200, 200, 200, 100);
+                            particle.speed = p.map(thrust, 0, 100, 1, 3);
+                        }
+                        
+                        p.fill(particleColor);
+                        p.noStroke();
+                        p.ellipse(particle.x, particle.y, particle.size);
+                    }
+                    
+                    p.pop();
+                }
+                
+                function drawPlane() {
+                    p.push();
+                    p.translate(planeX, planeY);
+                    
+                    // Adjust plane angle based on weight distribution
+                    const tilt = p.map(weightDistribution, 0, 100, -0.3, 0.3);
+                    p.rotate(tilt);
+                    
+                    // Fuselage
+                    p.fill(200);
+                    p.ellipse(0, 0, 80, 20);
+                    
+                    // Wings
+                    p.fill(180);
+                    p.rect(-40, -5, 80, 10, 5);
+                    
+                    // Adjust wing angle based on angle of attack
+                    wingAngle = p.map(angleOfAttack, 0, 100, -0.2, 0.5);
+                    p.push();
+                    p.rotate(wingAngle);
+                    p.rect(-35, -25, 70, 10, 3);
+                    p.pop();
+                    
+                    // Tail
+                    p.fill(180);
+                    p.rect(30, -10, 15, 8, 2);
+                    p.rect(30, 2, 15, 8, 2);
+                    
+                    // Cockpit
+                    p.fill(100, 150, 255);
+                    p.ellipse(-20, 0, 15, 10);
+                    
+                    // Engine based on thrust
+                    if (thrust > 10) {
+                        p.fill(255, 200, 0, p.map(thrust, 10, 100, 100, 200));
+                        p.ellipse(-40, 0, 15, 15);
+                        
+                        // Exhaust
+                        p.fill(255, 100, 0, p.map(thrust, 10, 100, 50, 150));
+                        for (let i = 0; i < 3; i++) {
+                            p.ellipse(-45 - i * 5, 0, 10 - i * 2, 8 - i * 2);
+                        }
+                    }
+                    
+                    p.pop();
+                }
+                
+                function drawForceVectors() {
+                    p.push();
+                    p.translate(planeX, planeY);
+                    
+                    const vectorScale = 2;
+                    
+                    switch(activeForce) {
+                        case 'lift':
+                            // Lift vector (up)
+                            p.stroke(0, 255, 0);
+                            p.strokeWeight(3);
+                            p.line(0, 0, 0, -lift / vectorScale);
+                            p.fill(0, 255, 0);
+                            p.triangle(
+                                0, -lift / vectorScale - 10,
+                                -5, -lift / vectorScale + 5,
+                                5, -lift / vectorScale + 5
+                            );
+                            break;
+                        case 'thrust':
+                            // Thrust vector (forward)
+                            p.stroke(0, 150, 255);
+                            p.strokeWeight(3);
+                            p.line(0, 0, thrust / vectorScale, 0);
+                            p.fill(0, 150, 255);
+                            p.triangle(
+                                thrust / vectorScale + 10, 0,
+                                thrust / vectorScale - 5, -5,
+                                thrust / vectorScale - 5, 5
+                            );
+                            break;
+                        case 'gravity':
+                            // Gravity vector (down)
+                            p.stroke(255, 0, 0);
+                            p.strokeWeight(3);
+                            p.line(0, 0, 0, weight / vectorScale);
+                            p.fill(255, 0, 0);
+                            p.triangle(
+                                0, weight / vectorScale + 10,
+                                -5, weight / vectorScale - 5,
+                                5, weight / vectorScale - 5
+                            );
+                            break;
+                        case 'drag':
+                            // Drag vector (backward)
+                            p.stroke(255, 200, 0);
+                            p.strokeWeight(3);
+                            p.line(0, 0, -drag / vectorScale, 0);
+                            p.fill(255, 200, 0);
+                            p.triangle(
+                                -drag / vectorScale - 10, 0,
+                                -drag / vectorScale + 5, -5,
+                                -drag / vectorScale + 5, 5
+                            );
+                            break;
+                    }
+                    
+                    p.pop();
+                }
+                
+                function updateSimulation() {
+                    // This function is called when sliders change
+                    // The draw() function already updates the simulation continuously
+                }
+                
+                // Expose updateSimulation to global scope
+                window.updateSimulation = updateSimulation;
+            });
+        }
+    </script>
+</body>
+</html>
