@@ -120,12 +120,9 @@ Distributed under the MIT License. See `LICENSE` for more information.
 
 ## 📧 Contact
 
-Created and developed by **Sarveshwar Senthil Kumar**
+SkyScholars Team - [@SkyScholars](https://twitter.com/skyscholars)
 
-- GitHub: [@sarveshwarsenthilkumar](https://github.com/sarveshwarsenthilkumar)
-- LinkedIn: [Sarveshwar Senthil Kumar](https://linkedin.com/in/sarveshwarsenthilkumar)
-
-Project Link: [https://github.com/SkyScholars/General-Aerodynamic-Forces](https://github.com/SkyScholars/General-Aerodynamic-Forces)
+Project Link: [https://github.com/yourusername/General-Aerodynamic-Forces](https://github.com/yourusername/General-Aerodynamic-Forces)
 
 ## 🙏 Acknowledgments
 
