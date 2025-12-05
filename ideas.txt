@@ -1,0 +1,4 @@
+Add the links to make them all true
+Add a feature to view the equations for each force
+Update the quiz function to make it work properly
+Update the mechanics of the game to make it slightly more accurate
